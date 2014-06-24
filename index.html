@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+  <html>
+  <head profile="http://www.w3.org/2005/10/profile">
+  <link rel="icon" type="image/png" href="img/57x57.png">
+  <title></title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon-precomposed" href="img/57x57.png"/>
+  <style>
+    body {
+      color:#ffffff;
+      -webkit-touch-callout:none;
+      -webkit-tap-highlight-color:rgba(0,0,0,0);
+      -webkit-text-size-adjust:none;
+      -webkit-user-select:none;
+    }
+    </style>
+    <script>
+      var config = {
+        title : 'title',
+        width : 320,
+        height : 500,
+        screenScale : 1,
+        fps : 60,
+        resLoadWaitTerm : 30,
+        gameDivAlign : 'center',
+        showLogOnDebugger : true,
+        showLogOnConsole : true,
+        needInstall : false
+      };
+    </script>
+</head>
+<body bgcolor="#000000">
+  <div id="divInstallGuide" style='display:none;text-align:center'>
+    사파리에서는 사운드 재생을 할 수 없습니다.<br/><br/>
+    홈 화면에서 플레이 해 주세요.
+  </div>
+  <div id="game">
+  </div>
+  <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+  <script src="engine.js"></script>
+</body>
+</html>
