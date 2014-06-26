@@ -5,6 +5,7 @@ var KEY_RIGHT = 39;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //http://stackoverflow.com/questions/2750028/enable-disable-zoom-on-iphone-safari-with-javascript
+
 function AllowZoom(flag) {
 	if (flag == true) {
 		$('head meta[name=viewport]').remove();
@@ -13,6 +14,73 @@ function AllowZoom(flag) {
 		$('head meta[name=viewport]').remove();
 		$('head').prepend('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=0" />');
 	}
+}
+
+function ajaxReq(url, arg, successFunc, type)
+{
+    if(typeof(arg) == "function" && successFunc == undefined)
+    {
+        successFunc = arg;
+        arg = {}
+    }
+
+    if(!type)
+        type = 'POST';
+
+    return $.ajax({url: url,
+            type: type,
+            data: arg,
+            dataType: 'json',
+            timeout: 1000 * 60,
+            error: function (xhr, ajaxOptions, thrownError)
+            {
+                alert("url : " + url + "\n" + xhr.responseText);
+                alert(thrownError);
+            },
+            success: function(json)
+                        {
+                            console.log("ajax req success");
+                            console.log("url : " + url);
+                            console.log("arg : ");
+                            console.log(arg);
+//                          console.log("successFunc : " + successFunc);
+
+                            if(json)
+                            {
+                                console.log("json : ");
+                                console.log(json);
+
+                                if(json.error || json.failed || (json.result && json.result != 0) )
+                                {
+                                    var message = "";
+
+                                    for(var i in json)
+                                        message += i + " : " + json[i] + "<br>";
+
+                                    $.growl(message);
+                                }
+                            }
+
+                            if(successFunc)
+                                successFunc(json)
+                        }
+        })
+}
+
+function FileRead(filename, func)
+{
+	ajaxReq('file_read.php', {filename:filename}, function(json)
+	{
+		func(json);
+	});
+}
+
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds)
+      break;
+  }
 }
 
 var $2 = new function() {
