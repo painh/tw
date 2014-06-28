@@ -16,8 +16,9 @@ function AllowZoom(flag) {
 	}
 }
 
-function ajaxReq(url, arg, successFunc, type)
+function ajaxReq(url, arg, successFunc, type, dataType)
 {
+	dataType = dataType | "json";
     if(typeof(arg) == "function" && successFunc == undefined)
     {
         successFunc = arg;
@@ -30,7 +31,7 @@ function ajaxReq(url, arg, successFunc, type)
     return $.ajax({url: url,
             type: type,
             data: arg,
-            dataType: 'json',
+            dataType: dataType,
             timeout: 1000 * 60,
             error: function (xhr, ajaxOptions, thrownError)
             {
@@ -48,12 +49,23 @@ function ajaxReq(url, arg, successFunc, type)
 function FileRead(filename, func)
 {
 	var data = new Object();
-	ajaxReq('file_read.php', {filename:filename}, function(json)
-	{
-		data.raw = json;
-		if(func)
-			func(json);
-	});
+
+    $.ajax({url: filename,
+            type: 'GET',
+            dataType: 'text',
+            timeout: 1000 * 60,
+            error: function (xhr, ajaxOptions, thrownError)
+            {
+                console.log("url : " + filename + "\n" + xhr.responseText);
+                alert(thrownError);
+            },
+            success: function(raw)
+                        { 
+							data.raw = raw ;
+							if(func)
+								func(raw);
+                        }
+        });
 
 	return data;
 }
@@ -511,6 +523,12 @@ var core = function() {
 			return cnt;
 		};
 	}; 
+
+	this.Camera = new function() {
+		this.x = 0;
+		this.y = 0;
+
+	};
 }
 
 
