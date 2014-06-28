@@ -79,34 +79,7 @@ function FileWrite(filename, con, func)
 	});
 }
 
-function sleep(milliseconds) {
-  var start = new Date().getTime();
-  for (var i = 0; i < 1e7; i++) {
-    if ((new Date().getTime() - start) > milliseconds)
-      break;
-  }
-}
-
 var core = function() {
-		this.ArgumentList = [];
-
-		this.lastTime = new Date().getTime();
-		this.fps = 0;
-		this.lastFPS = 0;
-		this.fps = 0;
-		this.totalFPS = 0;
-		this.globalNow = new Date();
-
-		this.RandomRange = function(n1, n2) {
-				return Math.floor( (Math.random() * (parseInt(n2) - parseInt(n1) + 1)) + parseInt(n1) );
-		};
-
-		this.removeFromList = function (list, obj) {
-				var idx = list.indexOf(obj);
-				list.splice(idx, 1);
-		};
-
-
 	this.KeyManager = new function() {
 		this.keyMap = new Array(255);
 		this.KeyMapPrevFrame = new Array(255);
@@ -440,12 +413,13 @@ var core = function() {
 		this.list = [];
 
 		this.OnLoadComplete = function(item) {
-			var res = this.Get(item.src);
+			var res = this.GetBySrc(item.src, true);
 			if(res == null)
 				return;
 
 			res.isLoaded = true;
-			console.log( "[ " + this.GetCompleteCnt() + " / " + Object.keys(this.list).length + " ] " + res.key + " / " + res.src + " load complete");
+			if(config['showLoadProcess'])
+				console.log( "[ " + this.GetCompleteCnt() + " / " + Object.keys(this.list).length + " ] " + res.key + " / " + res.src + " load complete");
 		};
 
 		this.Load = function(key, src, desc) {
@@ -494,13 +468,27 @@ var core = function() {
 		
 		};
 
-		this.Get = function( src ) {
+		this.GetBySrc = function(src, showError) {
 			for( var i in this.list ) {
 				if( this.list[i].src == src )	
 					return this.list[i];
 			}
 
-			console.log("not registered imageName " + src);
+			if(showError)
+				console.warn("not registered file(src)" + src);
+
+			return null;
+		};
+
+		this.GetByKey = function( key , showError) {
+			for( var i in this.list ) {
+				if( this.list[i].key == key )	
+					return this.list[i];
+			}
+
+			if(showError)
+				console.warn("not registered file(key)" + key);
+
 			return null;
 		};
 
@@ -526,9 +514,355 @@ var core = function() {
 
 	this.Camera = new function() {
 		this.x = 0;
-		this.y = 0;
+		this.y = 0; 
+		this.target = "USER";
 
+		this.Update = function()
+		{
+			if(this.target == "USER")
+			{
+			}
+		}
+
+		this.SetTarget = function(target)
+		{
+			this.target = target;
+		} 
 	};
-}
 
+	var Obj = function(core, name) {
+		this.x = 0;
+		this.y = 0;
+		this.name = name;
+		this.img = "";
+		this.core = core;
+	}
+
+	Obj.prototype.SetImg = function(resKey)
+	{
+		var img = this.core.Loader.GetByKey(resKey, true);
+		if(!img)
+			return;
+
+		this.img = img;
+	};
+
+	Obj.prototype.Update = function()
+	{
+		
+	};
+
+	Obj.prototype.Render = function()
+	{
+		if(this.img != "")
+		{
+			var x = this.x;
+			var y = this.y;
+			this.core.Renderer.Img(x, y, this.img); 
+		} 
+	};
+
+	var ObjList = function(core)
+	{ 
+		this.list = [];
+		this.core = core;
+
+		this.Clear = function() {
+			this.list = [];
+		};
+
+
+		this.GetChrByPos = function(x,y) {
+			var list = [];
+
+			for(var i in this.list) {
+				var item = this.list[i];
+				if((item.x == x) && (item.y == y))
+					list.push(item);
+			}
+
+			return list;
+		};
+
+		this.Add = function(name)
+		{
+			var obj = this.Get(name, false);
+			if(obj)
+			{
+				console.warn("already registered obj " + name);
+				return false;
+			}
+
+			obj = new Obj(core, name); 
+			this.list.push(obj); 
+		} 
+
+		this.Get = function(name, showError)
+		{
+			for(var i in this.list) {
+				var item = this.list[i];
+				console.log(item);
+				if(item.name == name)
+					return item;
+			}
+
+			if(showError)
+				console.warn('object found failed ' + name);
+
+			return null;
+		} 
+
+		this.ClearObjectType = function(type) {
+			var deadList = [];
+			for(var i in this.list) {
+				var item = this.list[i];
+				if(item.type != type)
+					continue;
+
+				item.isDead = true;
+				deadList.push(item);
+			}
+
+			for(var i in deadList)
+				removeFromList(this.list, deadList[i]);
+
+			for(var i in this.list) {
+				var item = this.list[i];
+				if(item.isDead)
+					console.log('dead alive');
+			}
+		}
+
+		this.Update = function() {
+			var prevCnt = this.moveCnt;
+			this.moveCnt = 0;
+
+			var deadList = [];
+			for(var i in this.list) {
+				var item = this.list[i];
+				item.Update();
+				if(item.isDead)
+				deadList.push(item);
+			}
+
+			for(var i in deadList)
+				removeFromList(this.list, deadList[i]);
+
+			for(var i in this.list) {
+				var item = this.list[i];
+				if(item.isDead)
+				console.log('dead alive');
+			} 
+		}
+
+		this.Render = function() {
+			for(var i in this.list) {
+				var item = this.list[i];
+				item.Render();
+			}
+		}
+
+		this.CheckCollision = function(x, y, obj) {
+
+			if(obj && obj.isDead)
+				return [];
+
+			var list = [];
+
+			for(var i in this.list) {
+				var item = this.list[i];
+				if(item == obj)
+				continue;
+
+				if(item.isDead)
+				continue;
+
+				if(!(x >= item.x + TILE_WIDTH ||
+				x + TILE_WIDTH <= item.x ||
+				y >= item.y + TILE_HEIGHT ||
+				y + TILE_HEIGHT <= item.y))
+				list.push(item);
+			}
+			return list;
+		};
+	};
+
+	this.Interpreter = new function() {
+		this.core = {};
+		this.space = 'unknown';
+		this.line = 0;
+
+		this.oneLine = function(oneLine) { 
+			var flag = false;
+
+			if(oneLine.hasOwnProperty('//'))
+				return;
+
+			for(var i in this)
+			{
+				if(i == oneLine['cmd'])
+					flag = true;
+
+			}
+
+			if(!flag)
+			{
+				console.warn('invalid cmd! ' + this.space + ":" + this.line);
+				console.warn(oneLine);
+				return;
+			}
+
+			var args = oneLine['args'] || null; 
+
+			this[oneLine['cmd'].toLowerCase()](args);
+		}
+
+		this.Run = function(core, space, script) {
+			this.line = 1;
+			this.core = core;
+			this.space = space;
+
+			if(config['showInterpreterProcess'])
+				console.log('start script ' + this.space);
+
+			for(var i in script) {
+				var item = script[i];
+				if(config['showInterpreterProcess'])
+					console.log(item);
+
+				this.oneLine(item);
+				this.line++;
+			} 
+		}
+
+		this.CheckArgument = function(args, reqArg) {
+			for(var i in reqArg) {
+				var flag = false;
+				for(var j in args)
+					if(j == reqArg[i])
+						flag = true;
+
+				if(flag == false) {
+					console.warn( this.space + ":"+this.line+" 인자가 부족합니다 " + reqArg[i]);
+					return false;
+				}
+			}
+
+			return true; 
+		}
+
+
+		this.setcameratarget = function(args) {
+			if(!this.CheckArgument(args, ['target']))
+				return; 
+
+			this.core.Camera.SetTarget(args['target']);
+		} 
+
+		this.addobj = function(args) {
+			if(!this.CheckArgument(args, ['name']))
+				return; 
+
+			this.core.ObjList.Add(args['name']);
+		} 
+
+		this.setobjimg = function(args) {
+			if(!this.CheckArgument(args, ['name', 'resKey']))
+				return; 
+
+			var obj = this.core.ObjList.Get(args['name'], true);
+			if(!obj)
+				return;
+
+			obj.SetImg(args['resKey']);
+		} 
+
+	}; 
+	//
+// core code
+	this.ArgumentList = [];
+
+	this.lastTime = new Date().getTime();
+	this.fps = 0;
+	this.lastFPS = 0;
+	this.fps = 0;
+	this.totalFPS = 0;
+	this.globalNow = new Date();
+	this.ObjList = new ObjList(this);
+
+
+	this.RandomRange = function(n1, n2) {
+			return Math.floor( (Math.random() * (parseInt(n2) - parseInt(n1) + 1)) + parseInt(n1) );
+	};
+
+	this.removeFromList = function (list, obj) {
+			var idx = list.indexOf(obj);
+			list.splice(idx, 1);
+	};
+
+	this.ToJSON = function(name, raw)
+	{
+		try
+		{
+			var data = JSON.parse(raw); 
+			return data;
+		}
+		catch(e)
+		{
+			alert(name + "\n" + e.message);
+			return null;
+		}
+	}
+
+	this.OnLoadComplete = function() {
+		var data = this.ToJSON("entry", this.Loader.GetByKey('entry', true).raw);
+		if(data)
+			this.Interpreter.Run(this, 'OnLoadComplete', data['OnLoadComplete']);
+	};
+
+	this.StartLoop = function()
+	{
+		var interval = 1000 / config["fps"];
+		var core = this;
+		var timer = setInterval( function() {
+			core.globalNow = new Date();
+
+			if(core.MouseManager.prevLDown == false && core.MouseManager.LDown )
+				core.MouseManager.Clicked = true;
+
+			if(core.MouseManager.prevLDown == true && core.MouseManager.LDown == false )
+				core.MouseManager.Upped = true;
+//update
+			core.ObjList.Update();
+			core.Camera.Update();
+//render
+			var r = core.Renderer;
+			r.SetColor(r.clearColor);
+			r.Rect(0, 0, config['width'], config['height']);
+			r.SetColor(r.defaultColor); 
+			core.ObjList.Render();
+			core.fps++;
+			r.Text(0, 0, "FPS : " + core.lastFPS );
+			r.frontContext.drawImage(r.backCanvas, 0, 0,
+								r.width, r.height, 0, 0, r.backCanvas.width, r.backCanvas.height); 
+//render end	
+			var curDate = new Date();
+			core.globalNow = curDate.getTime();
+
+			if(core.globalNow - core.lastTime > 1000) {
+				core.lastFPS = core.fps;
+				core.fps = 0;
+				core.lastTime = core.globalNow;
+			}
+			
+			core.MouseManager.prevLDown = core.MouseManager.LDown;
+			core.MouseManager.Upped = false;
+			core.MouseManager.Clicked = false;
+
+			core.KeyManager.EndFrame();
+
+			++core.totalFPS;
+		}, interval); 
+	}; 
+} 
 
