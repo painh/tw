@@ -102,6 +102,8 @@ var core = function() {
 		this.x = 88
 
 		this.space = 32;
+		this.ctrl = 17;
+		this.alt = 18;
 
 		for( var i = 0; i < 255; ++i) {
 			this.KeyMapPrevFrame[i] = false;
@@ -148,7 +150,9 @@ var core = function() {
 	this.MouseManager = new function() {
 		this.x = 0;
 		this.y = 0;
-		this.LDown = false;
+		this.preX = 0;
+		this.preY = 0;
+		this.Down = false;
 		this.prevLDown = false;
 		this.Clicked = false;
 		this.Upped = false;
@@ -172,7 +176,7 @@ var core = function() {
             this.x = Math.floor((pageX - offsetX) / config["screenScale"]);
             this.y = Math.floor((pageY - offsetY) / config["screenScale"]);
 
-            this.LDown = true;
+			this.Down = true;
             return false;
         }
 
@@ -189,23 +193,23 @@ var core = function() {
                 pageY = e.pageY;
             }
 
+			this.preX = this.x;
+			this.preY = this.y;
+
             var offsetX = $("#game").offset().left;
-            var offsetY = $("#game").offset().top;
+            var offsetY = $("#game").offset().top; 
             this.x = Math.floor((pageX - offsetX) / config["screenScale"]);
             this.y = Math.floor((pageY - offsetY) / config["screenScale"]);
+
             return false; 
         }
 
         this.mouseUp = function(e) {
-            e.preventDefault();
-
-            this.LDown = false;
+            e.preventDefault(); 
+			this.Down = false;
             return false;
         }
 
-        $(document).bind("touchstart mousedown", this.mouseDown);
-        $(document).bind("touchmove mousemove", this.mouseMove);
-        $(document).bind("touchend mouseup", this.mouseUp);
 	}();
 
 	this.GetArgument = function() {
@@ -512,20 +516,31 @@ var core = function() {
 		};
 	}; 
 
-	this.Camera = new function() {
+	var Camera = function(core) {
 		this.x = 0;
 		this.y = 0; 
 		this.target = "USER";
+		this.core = core;
 
-		this.Update = function()
-		{
-			if(this.target == "USER")
-			{
+		this.Update = function() {
+			if(this.target == "USER") {
+			}
+
+			if(this.target == "TOOL") {
+				if(this.core.MouseManager.Down && this.core.KeyManager.ctrl) {
+					var dx = this.core.MouseManager.x - this.core.MouseManager.preX;
+					var dy = this.core.MouseManager.y - this.core.MouseManager.preY;
+
+					this.x += dx;
+					this.y += dy; 
+
+					$("#spanCameraX").text(this.x);
+					$("#spanCameraY").text(this.y);
+				} 
 			}
 		}
 
-		this.SetTarget = function(target)
-		{
+		this.SetTarget = function(target) {
 			this.target = target;
 		} 
 	};
@@ -776,7 +791,6 @@ var core = function() {
 
 			obj.SetImg(args['resKey']);
 		} 
-
 	}; 
 	//
 // core code
@@ -789,6 +803,7 @@ var core = function() {
 	this.totalFPS = 0;
 	this.globalNow = new Date();
 	this.ObjList = new ObjList(this);
+	this.Camera = new Camera(this);
 
 
 	this.RandomRange = function(n1, n2) {
@@ -815,22 +830,49 @@ var core = function() {
 	}
 
 	this.OnLoadComplete = function() {
+		var core = this;
+
+		if(config["gameDivAlign"] == "center")
+			$("#game").css( { position : "absolute", top : "50%", left : "50%",  margin: "-" + (config["height"] * config["screenScale"])/ 2 + "px 0 0 -" + (config["width"] * config["screenScale"]) / 2+ "px"} );
+
+		document.title = config['title'];
+		AllowZoom(false); 
+
+
+		$(window).keydown(function(e) { 
+			core.KeyManager.KeyDown(e.keyCode);
+		});
+
+		$(window).keyup(function(e) {
+			core.KeyManager.KeyUp(e.keyCode);
+		});
+
+        $(document).bind("touchstart mousedown", function(e) {
+			core.MouseManager.mouseDown(e) ;
+		});
+        $(document).bind("touchmove mousemove", function(e) {
+			core.MouseManager.mouseMove(e) ;
+		});
+
+        $(document).bind("touchend mouseup", function(e) {
+			core.MouseManager.mouseUp(e) ;
+		});
+
 		var data = this.ToJSON("entry", this.Loader.GetByKey('entry', true).raw);
 		if(data)
 			this.Interpreter.Run(this, 'OnLoadComplete', data['OnLoadComplete']);
 	};
 
-	this.StartLoop = function()
-	{
+	this.StartLoop = function() {
 		var interval = 1000 / config["fps"];
 		var core = this;
 		var timer = setInterval( function() {
 			core.globalNow = new Date();
 
-			if(core.MouseManager.prevLDown == false && core.MouseManager.LDown )
+			if(core.MouseManager.prevLDown == false && core.MouseManager.Down )
 				core.MouseManager.Clicked = true;
 
-			if(core.MouseManager.prevLDown == true && core.MouseManager.LDown == false )
+			if(core.MouseManager.prevLDown == true && core.MouseManager.Down == false )
 				core.MouseManager.Upped = true;
 //update
 			core.ObjList.Update();
@@ -855,7 +897,7 @@ var core = function() {
 				core.lastTime = core.globalNow;
 			}
 			
-			core.MouseManager.prevLDown = core.MouseManager.LDown;
+			core.MouseManager.prevLDown = core.MouseManager.Down;
 			core.MouseManager.Upped = false;
 			core.MouseManager.Clicked = false;
 
