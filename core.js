@@ -152,6 +152,8 @@ var core = function() {
 		this.y = 0;
 		this.preX = 0;
 		this.preY = 0;
+		this.x = 0;
+		this.y = 0;
 		this.Down = false;
 		this.prevLDown = false;
 		this.Clicked = false;
@@ -193,8 +195,6 @@ var core = function() {
                 pageY = e.pageY;
             }
 
-			this.preX = this.x;
-			this.preY = this.y;
 
             var offsetX = $("#game").offset().left;
             var offsetY = $("#game").offset().top; 
@@ -209,6 +209,17 @@ var core = function() {
 			this.Down = false;
             return false;
         }
+
+		this.EndFrame = function() {
+			this.prevLDown = this.Down;
+			this.Upped = false;
+			this.Clicked = false;
+
+			this.dx = this.x - this.preX;
+			this.dy = this.y - this.preY; 
+			this.preX = this.x;
+			this.preY = this.y; 
+		}
 
 	}();
 
@@ -527,12 +538,9 @@ var core = function() {
 			}
 
 			if(this.target == "TOOL") {
-				if(this.core.MouseManager.Down && this.core.KeyManager.ctrl) {
-					var dx = this.core.MouseManager.x - this.core.MouseManager.preX;
-					var dy = this.core.MouseManager.y - this.core.MouseManager.preY;
-
-					this.x += dx;
-					this.y += dy; 
+				if(this.core.MouseManager.Down && this.core.KeyManager.IsKeyDown(this.core.KeyManager.ctrl)) { 
+					this.x += this.core.MouseManager.dx;
+					this.y += this.core.MouseManager.dy; 
 
 					$("#spanCameraX").text(this.x);
 					$("#spanCameraY").text(this.y);
@@ -551,6 +559,7 @@ var core = function() {
 		this.name = name;
 		this.img = "";
 		this.core = core;
+		this.worldObj = true;
 	}
 
 	Obj.prototype.SetImg = function(resKey)
@@ -567,13 +576,21 @@ var core = function() {
 		
 	};
 
+	Obj.prototype.GetRenderXY = function()
+	{
+		if(this.worldObj)
+			return {x : this.core.Camera.x - this.x,
+					y : this.core.Camera.y - this.y};
+
+		return {x: this.x, y : this.y}; 
+	}
+
 	Obj.prototype.Render = function()
 	{
 		if(this.img != "")
 		{
-			var x = this.x;
-			var y = this.y;
-			this.core.Renderer.Img(x, y, this.img); 
+			var pos = this.GetRenderXY(); 
+			this.core.Renderer.Img(pos.x, pos.y, this.img); 
 		} 
 	};
 
@@ -897,11 +914,8 @@ var core = function() {
 				core.lastTime = core.globalNow;
 			}
 			
-			core.MouseManager.prevLDown = core.MouseManager.Down;
-			core.MouseManager.Upped = false;
-			core.MouseManager.Clicked = false;
-
 			core.KeyManager.EndFrame();
+			core.MouseManager.EndFrame();
 
 			++core.totalFPS;
 		}, interval); 
