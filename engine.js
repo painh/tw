@@ -20,7 +20,7 @@ $(document).ready(function() {
 					console.log('all load complete!');
 
 				clearInterval(timer); 
-				$2.OnLoadComplete();
+				$2.OnLoadComplete(true);
 				$2.StartLoop();
 			}); 
 	}); 

@@ -79,7 +79,7 @@ function FileWrite(filename, con, func)
 	});
 }
 
-var core = function(toolMode) {
+var core = function() {
 	this.KeyManager = new function() {
 		this.keyMap = new Array(255);
 		this.KeyMapPrevFrame = new Array(255);
@@ -316,6 +316,7 @@ var core = function(toolMode) {
 			this.context.drawImage( img, srcX, srcY, srcWidth, srcHeight, x, y, renderWidth, renderHeight);
 		}
 
+		
 		this.Img = function( x, y, img, patternX, patternY, n ) {
 			if(!img.isLoaded)
 				return;
@@ -329,13 +330,13 @@ var core = function(toolMode) {
 			if(n == undefined)
 				n = 0;
 
-			var px = parseInt(n % (img.width / patternX));
+			var px = Math.round(n % (img.width / patternX));
 			var py
 
 			if(n < (img.width / patternX))
 				py = 0;
 			else
-				py = parseInt(n / (img.width / patternX))
+				py = Math.round(n / (img.width / patternX))
 
 			this.context.drawImage( img, px * patternX, py * patternY, patternX, patternY, x, y, patternX, patternY);
 		}
@@ -356,13 +357,13 @@ var core = function(toolMode) {
 			if(n == undefined)
 				n = 0;
 
-			var px = parseInt(n % (img.width / patternX))
+			var px = Math.round(n % (img.width / patternX))
 			var py
 
 			if(n < (img.width / patternX))
 				py = 0;
 			else
-				py = parseInt(n / (img.width / patternX))
+				py = Math.round(n / (img.width / patternX))
 
 			//this.context.drawImage( img, px * patternX, py * patternY, patternX, patternY, -this.width + x , y, patternX, patternY);
 
@@ -420,10 +421,6 @@ var core = function(toolMode) {
 		
 		this.SetColor = function( color ) {
 			this.context.fillStyle = color;
-		};
-
-		this.SetStrokeColor = function( color ) {
-			this.context.strokeStyle = color;
 		};
 	}; 
 	
@@ -537,7 +534,10 @@ var core = function(toolMode) {
 		this.core = core;
 
 		this.Update = function() {
-			if(this.core.toolMode) {
+			if(this.target == "USER") {
+			}
+
+			if(this.target == "TOOL") {
 				if(this.core.MouseManager.Down && this.core.KeyManager.IsKeyDown(this.core.KeyManager.ctrl)) { 
 					this.x += this.core.MouseManager.dx;
 					this.y += this.core.MouseManager.dy; 
@@ -545,20 +545,7 @@ var core = function(toolMode) {
 					$("#spanCameraX").text(this.x);
 					$("#spanCameraY").text(this.y);
 				} 
-				return;
 			}
-
-			if(this.target == "USER") {
-			} 
-		}
-
-		this.ScreenToWorld = function(obj) {
-			return {x : this.x + obj.x, y : this.y + obj.y};
-		}
-
-		this.WorldToScreen = function(obj) {
-			return {x : obj.x - this.x,
-					y : obj.y - this.y};
 		}
 
 		this.SetTarget = function(target) {
@@ -825,126 +812,65 @@ var core = function(toolMode) {
 
 	var Map = function(core) {
 		this.tileSet = [];
-		this.tileSize = 32;
 		this.width = 100;
 		this.height = 100;
-		this.mapData = [ 1, 1];
+		this.tileSize = 32;
+		this.mapData = [ 0, ];
 		this.screenTileCntX = 0;
 		this.screenTileCntY = 0;
 		this.core = core;
-		this.selectedTile = 0;
 
 		this.Update = function() {
-			if(!this.core.toolMode) 
-				return;
+		}
 
-			var pos = this.core.Camera.ScreenToWorld(this.core.MouseManager);
-			pos.x = parseInt(pos.x / this.tileSize) * this.tileSize;
-			pos.y = parseInt(pos.y / this.tileSize) * this.tileSize;
-			this.cursor = this.core.Camera.WorldToScreen(pos);
-
-			if(this.core.MouseManager.Down && !this.core.KeyManager.IsKeyDown(this.core.KeyManager.ctrl)) {
-				var pos = this.core.Camera.ScreenToWorld(this.core.MouseManager);
-				pos.x = parseInt(pos.x / this.tileSize);
-				pos.y = parseInt(pos.y / this.tileSize);
-
-				this.SetTile(pos.x, pos.y, this.selectedTile); 
-			}
-		};
-
-		this.SetSelectedTile = function(tile) {
-			this.selectedTile = tile;
-		}; 
-
-		this.GetDataPos = function(x, y) {
-			return parseInt(y) * parseInt(this.width) + parseInt(x);
-		};
-
-		this.SetTile = function(x, y, tile) {
-			var pos = this.GetDataPos(x, y);
-			if(pos >= this.mapData.length)
-				return;
-
-			this.mapData[pos] = tile;
-		};
-
-		this.SetTileSize = function(size) {
+		this.SetTileSize = function(size)
+		{
 			this.tileSize = size;
 
 			this.screenTileCntX = config['width'] / size;
 			this.screenTileCntY = config['height'] / size;
-		};
-
-		this.SetMapSize = function(width, height) {
-			this.width = width;
-			this.height = height;
-			this.mapData.length = width * height;
-			for(var i = 0; i < width*height;++i)
-				this.mapData[i] = 0;
-		}; 
-
-		this.SetTileSet = function(tileSet)
-		{
-			for(var i in tileSet)
-			{
-				var img = this.core.Loader.GetByKey(tileSet[i]);
-				this.tileSet[i] = img;
-				if(this.core.toolMode) {
-					console.log(img.src);
-					$("#imgTile_" + i).attr("src", img.src);
-				}
-			}
-		};
+		}
 
 		this.Render = function() { 
-			var renderXSrc = -(this.core.Camera.x % this.tileSize);
-			var renderX = renderXSrc;
+			var xIDX = this.core.Camera.x;
+			var yIDXSrc = this.core.Camera.y;
 
-			var renderYSrc = -(this.core.Camera.y % this.tileSize);
-			var renderY = renderYSrc;
+			xIDX = Math.floor(xIDX / this.tileSize);
+			yIDXSrc = Math.floor(yIDXSrc / this.tileSize);
 
-			var xIDX = parseInt(this.core.Camera.x / this.tileSize);
-			var yIDXSrc = parseInt(this.core.Camera.y / this.tileSize);
-			
-			var loopX = config['width'] / this.tileSize + 2;
-			var loopY = config['height'] / this.tileSize + 2;
-
-			for( var i = 0; i <  loopX; ++i, renderX += this.tileSize, xIDX++) {
-				if(xIDX < 0)
+			for( var renderX = 0; renderX < config['width']; renderX += this.tileSize ) {
+				if(xIDX < 0) {
+					++xIDX;
 					continue;
+				}
 
 				if(xIDX >= this.width)
-					continue;
+						continue;
 
 				var yIDX = yIDXSrc;
-				renderY = renderYSrc;
 
-				for( var j = 0; j < loopY; ++j, renderY += this.tileSize, ++yIDX) { 
+				for( var renderY = 0; renderY < this.screenHeight; renderY += this.tileSize ) {
+					++yIDX; 
+
 					if(yIDX < 0)
 						continue;
 
 					if(yIDX >= this.height)
-						continue; 
+						continue;
 
-					var tileIDX = this.GetDataPos(xIDX, yIDX);
+					var tileIDX = yIDX * this.width + xIDX;
 
 					if(tileIDX < 0)
 						continue;
 
-					if(tileIDX >= this.mapData.length)
+					if(tileIDX >= this.data.length )
 						return;
 
-					var tile = this.mapData[tileIDX]; 
-					var img = this.tileSet[0];
-					this.core.Renderer.Img( renderX, renderY, img, this.tileSize, this.tileSize, tile);
+					Renderer.Img( renderX, renderY, this.tileImg[i], this.tileSize, this.tileSize,
+													tile);
 				}
+				++xIDX;
 			}
-
-			if(!this.core.toolMode)
-				return;
-
-			this.core.Renderer.SetStrokeColor("#F00");
-			this.core.Renderer.RectStroke(this.cursor.x, this.cursor.y, this.tileSize, this.tileSize); 
 		} 
 	};
 	//
@@ -960,7 +886,7 @@ var core = function(toolMode) {
 	this.ObjList = new ObjList(this);
 	this.Camera = new Camera(this);
 	this.Map = new Map(this);
-	this.toolMode = toolMode; 
+
 
 	this.RandomRange = function(n1, n2) {
 			return Math.floor( (Math.random() * (parseInt(n2) - parseInt(n1) + 1)) + parseInt(n1) );
@@ -1038,7 +964,6 @@ var core = function(toolMode) {
 			core.ObjList.Update();
 			core.Camera.Update();
 //render
-			//
 			var r = core.Renderer;
 			r.SetColor(r.clearColor);
 			r.Rect(0, 0, config['width'], config['height']);
@@ -1046,10 +971,7 @@ var core = function(toolMode) {
 			core.Map.Render();
 			core.ObjList.Render();
 			core.fps++;
-
-			if(config['showFPS'])
-				r.Text(0, 0, "FPS : " + core.lastFPS );
-
+			r.Text(0, 0, "FPS : " + core.lastFPS );
 			r.frontContext.drawImage(r.backCanvas, 0, 0,
 								r.width, r.height, 0, 0, r.backCanvas.width, r.backCanvas.height); 
 //render end	

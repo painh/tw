@@ -31,20 +31,41 @@
 			image-rendering: optimize-contrast;
 			-ms-interpolation-mode: nearest-neighbor;
 		}
+
+		#divLeftTileSet {
+			border : 1px solid #fff;
+			width : 300px;
+			height : 480px;
+		}
+
+		.divTileArea {
+			width : 300px;
+			height : 480px;
+			overflow : auto; 
+		}
 	</style>
 </head>
 <body>
-	<input type="NUMBER" placeholder = 'filename' id="inpFilename"/><button id='inpLoad'>load</button><button id='inpSave'>save</button><br/>
-	<input type="NUMBER" placeholder = 'reskey' id="inpResKey"/>
+	<input type="TEXT" placeholder = 'filename' id="inpFilename"/><button id='btnLoad'>load</button><button id='btnSave'>save</button><br/>
 	<input type="NUMBER" placeholder = 'mapWidth' id="inpMapWidth"/>
 	<input type="NUMBER" placeholder = 'mapHeight' id="inpMapHeight"/>
+	<input type="NUMBER" placeholder = 'tileWidth' id="inpMapWidth"		value = '32'>
+	<input type="NUMBER" placeholder = 'tileHeight' id="inpMapHeight"	value = '32'>
 
+	<br/>
+		<input type="TEXT" placeholder = 'TileAResKey' id="inpTileAResKey">
 	<br/>
 	camera[
 	<span id="spanCameraX">camerax</span> ,
 	<span id="spanCameraY">cameray</span> 
 	]
 	<br/>
+
+	<div id="divLeftTileSet">
+		<div id="divTileA" class="divTileArea">
+			<img id = "imgTile_0" class="imgTileArea" src=""></img>
+		</div>
+	</div>
 
 	<div id="game">
 		<canvas id='mainCanvas'></canvas>	
