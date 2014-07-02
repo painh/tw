@@ -22,21 +22,35 @@ $(document).ready(function() {
 				clearInterval(timer); 
 				$2.OnLoadComplete(false);
 
-				$2.Map.SetMapSize(100, 100);
-				$2.Map.SetTileSize(32);
-				$2.Map.SetTileSet(['tilesetA']);
-
 				$2.StartLoop();
 			}); 
 	}); 
 
-	$("#btnLoad").click(function() {
-		$2.Map.Load();	
+	$("#btnLoad").click(function() { 
+		var filename = $("#inpFilename").val();
+		$2.Map.Load(filename, function(map)
+					{
+						$("#inpMapWidth").val(map.width);
+						$("#inpMapHeight").val(map.height);
+						$("#inpTileSize").val(map.tileSize);
+						$("#inpTileAResKey").val(map.tileSet[0].key);
+					});	
+
 	});
 
-	$("#btnLoad").click(function() {
+	$("#btnSave").click(function() {
 		var filename = $("#inpFilename").val();
-		$2.Map.Save(filename);	
+		var mapWidth = $("#inpMapWidth").val();
+		var mapHeight = $("#inpMapHeight").val();
+		var tileSize = $("#inpTileSize").val();
+		var tileSetA = $("#inpTileAResKey").val();
+
+
+		$2.Map.Save({filename:filename,
+					mapWidth:mapWidth,
+				   mapHeight:mapHeight,
+				   tileSize:tileSize,
+				   tileSetA:tileSetA});	
 	});
 
 	$(".imgTileArea").click(function(e) {

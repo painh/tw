@@ -18,7 +18,7 @@ function AllowZoom(flag) {
 
 function ajaxReq(url, arg, successFunc, type, dataType)
 {
-	dataType = dataType | "json";
+	dataType = dataType || "json";
     if(typeof(arg) == "function" && successFunc == undefined)
     {
         successFunc = arg;
@@ -159,9 +159,7 @@ var core = function(toolMode) {
 		this.Clicked = false;
 		this.Upped = false;
 
-
         this.mouseDown = function(e) {
-            e.preventDefault();
 
             var pageX, pageY;
             if(e.type.indexOf("touch") == 0) {
@@ -178,14 +176,15 @@ var core = function(toolMode) {
             this.x = Math.floor((pageX - offsetX) / config["screenScale"]);
             this.y = Math.floor((pageY - offsetY) / config["screenScale"]);
 
+			if(this.x >= 0 && this.y >= 0 && this.x < config['width'] && this.y < config['height'])
+				e.preventDefault();
+
 			this.Down = true;
-            return false;
+            return true;
         }
 
         this.mouseMove = function(e) {
-            e.preventDefault();
-
-            var pageX, pageY;
+			var pageX, pageY;
             if(e.type.indexOf("touch") == 0) {
                 pageX = e.originalEvent.touches[0].pageX;
                 pageY = e.originalEvent.touches[0].pageY;
@@ -201,15 +200,34 @@ var core = function(toolMode) {
             this.x = Math.floor((pageX - offsetX) / config["screenScale"]);
             this.y = Math.floor((pageY - offsetY) / config["screenScale"]);
 
-            return false; 
+			if(this.x >= 0 && this.y >= 0 && this.x < config['width'] && this.y < config['height'])
+				e.preventDefault();
+
+            return true;
         }
 
         this.mouseUp = function(e) {
-            e.preventDefault(); 
-			this.Down = false;
-            return false;
-        }
+			var pageX, pageY;
+            if(e.type.indexOf("touch") == 0) {
+                pageX = e.originalEvent.touches[0].pageX;
+                pageY = e.originalEvent.touches[0].pageY;
+            }
+            else {
+                pageX = e.pageX;
+                pageY = e.pageY;
+            }
 
+            var offsetX = $("#game").offset().left;
+            var offsetY = $("#game").offset().top; 
+            this.x = Math.floor((pageX - offsetX) / config["screenScale"]);
+            this.y = Math.floor((pageY - offsetY) / config["screenScale"]);
+
+			if(this.x >= 0 && this.y >= 0 && this.x < config['width'] && this.y < config['height'])
+				e.preventDefault();
+
+			this.Down = false;
+            return false; 
+        }
 		this.EndFrame = function() {
 			this.prevLDown = this.Down;
 			this.Upped = false;
@@ -539,8 +557,8 @@ var core = function(toolMode) {
 		this.Update = function() {
 			if(this.core.toolMode) {
 				if(this.core.MouseManager.Down && this.core.KeyManager.IsKeyDown(this.core.KeyManager.ctrl)) { 
-					this.x += this.core.MouseManager.dx;
-					this.y += this.core.MouseManager.dy; 
+					this.x -= this.core.MouseManager.dx;
+					this.y -= this.core.MouseManager.dy; 
 
 					$("#spanCameraX").text(this.x);
 					$("#spanCameraY").text(this.y);
@@ -881,6 +899,7 @@ var core = function(toolMode) {
 			this.mapData.length = width * height;
 			for(var i = 0; i < width*height;++i)
 				this.mapData[i] = 0;
+			console.log(width, height);
 		}; 
 
 		this.SetTileSet = function(tileSet)
@@ -936,6 +955,8 @@ var core = function(toolMode) {
 
 					var tile = this.mapData[tileIDX]; 
 					var img = this.tileSet[0];
+					if(!img)
+						continue;
 					this.core.Renderer.Img( renderX, renderY, img, this.tileSize, this.tileSize, tile);
 				}
 			}
@@ -946,6 +967,27 @@ var core = function(toolMode) {
 			this.core.Renderer.SetStrokeColor("#F00");
 			this.core.Renderer.RectStroke(this.cursor.x, this.cursor.y, this.tileSize, this.tileSize); 
 		} 
+
+		this.Save = function(arg) {
+			arg.data = this.mapData;
+			FileWrite(arg.filename, JSON.stringify(arg), function() {
+						  alert('save succeed');
+					  });
+		};
+
+		this.Load = function(filename, func) {
+			var core = this.core;
+			var map = this;
+			FileRead(filename, function(json)
+					{
+						var data = core.ToJSON(json);
+						map.SetMapSize(parseInt(data.mapWidth), parseInt(data.mapHeight));
+						map.SetTileSize(parseInt(data.tileSize));
+						map.SetTileSet([data.tileSetA]);
+						map.mapData = data.data;
+						func(map);
+					});
+		}
 	};
 	//
 // core code
@@ -971,7 +1013,7 @@ var core = function(toolMode) {
 			list.splice(idx, 1);
 	};
 
-	this.ToJSON = function(name, raw)
+	this.ToJSON = function(raw)
 	{
 		try
 		{
@@ -980,7 +1022,8 @@ var core = function(toolMode) {
 		}
 		catch(e)
 		{
-			alert(name + "\n" + e.message);
+			console.error(e);
+			console.error(name + "\n" + e.message);
 			return null;
 		}
 	}
@@ -1016,7 +1059,7 @@ var core = function(toolMode) {
 
 		if(runEntry)
 		{
-			var data = this.ToJSON("entry", this.Loader.GetByKey('entry', true).raw);
+			var data = this.ToJSON(this.Loader.GetByKey('entry', true).raw, "entry");
 			if(data)
 				this.Interpreter.Run(this, 'OnLoadComplete', data['OnLoadComplete']);
 		}
