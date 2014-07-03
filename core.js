@@ -46,9 +46,12 @@ function ajaxReq(url, arg, successFunc, type, dataType)
         });
 }
 
-function FileRead(filename, func)
+function FileRead(filename, func, noCache)
 {
 	var data = new Object();
+
+	if(noCache != undefined)
+		filename = filename + "?t="+(new Date().getTime());
 
     $.ajax({url: filename,
             type: 'GET',
@@ -986,7 +989,7 @@ var core = function(toolMode) {
 						map.SetTileSet([data.tileSetA]);
 						map.mapData = data.data;
 						func(map);
-					});
+					}, true);
 		}
 	};
 	//
