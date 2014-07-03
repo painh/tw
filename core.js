@@ -279,8 +279,8 @@ var core = function(toolMode) {
 		this.context.textBaseline = 'top';
 		this.fontSize = parseInt($("#mainCanvas").css('font-size'));
 
-		this.clearColor = "#000000";
-		this.defaultColor = "#ffffff"; 
+		this.clearColor = config['clearColor'];
+		this.defaultColor = config['defaultColor']; 
 
 		this.SetAlpha = function( a ) {
 			this.context.globalAlpha = a;
@@ -559,7 +559,7 @@ var core = function(toolMode) {
 
 		this.Update = function() {
 			if(this.core.toolMode) {
-				if(this.core.MouseManager.Down && this.core.KeyManager.IsKeyDown(this.core.KeyManager.ctrl)) { 
+				if(this.core.MouseManager.Down && this.core.KeyManager.IsKeyDown(this.core.KeyManager.space)) { 
 					this.x -= this.core.MouseManager.dx;
 					this.y -= this.core.MouseManager.dy; 
 
@@ -864,7 +864,7 @@ var core = function(toolMode) {
 			pos.y = parseInt(pos.y / this.tileSize) * this.tileSize;
 			this.cursor = this.core.Camera.WorldToScreen(pos);
 
-			if(this.core.MouseManager.Down && !this.core.KeyManager.IsKeyDown(this.core.KeyManager.ctrl)) {
+			if(this.core.MouseManager.Down && !this.core.KeyManager.IsKeyDown(this.core.KeyManager.space)) {
 				var pos = this.core.Camera.ScreenToWorld(this.core.MouseManager);
 				pos.x = parseInt(pos.x / this.tileSize);
 				pos.y = parseInt(pos.y / this.tileSize);
@@ -882,6 +882,9 @@ var core = function(toolMode) {
 		};
 
 		this.SetTile = function(x, y, tile) {
+			if((x >= this.width) || (y >= this.height) || (x < 0) || (y < 0))
+				return;
+
 			var pos = this.GetDataPos(x, y);
 			if(pos >= this.mapData.length)
 				return;
@@ -902,7 +905,6 @@ var core = function(toolMode) {
 			this.mapData.length = width * height;
 			for(var i = 0; i < width*height;++i)
 				this.mapData[i] = 0;
-			console.log(width, height);
 		}; 
 
 		this.SetTileSet = function(tileSet)
@@ -957,10 +959,11 @@ var core = function(toolMode) {
 						return;
 
 					var tile = this.mapData[tileIDX]; 
-					var img = this.tileSet[0];
-					if(!img)
-						continue;
-					this.core.Renderer.Img( renderX, renderY, img, this.tileSize, this.tileSize, tile);
+					if(tile) {
+						var img = this.tileSet[0];
+						if(img)
+							this.core.Renderer.Img( renderX, renderY, img, this.tileSize, this.tileSize, tile);
+					}
 				}
 			}
 
@@ -969,6 +972,10 @@ var core = function(toolMode) {
 
 			this.core.Renderer.SetStrokeColor("#F00");
 			this.core.Renderer.RectStroke(this.cursor.x, this.cursor.y, this.tileSize, this.tileSize); 
+
+			var pos = this.core.Camera.WorldToScreen({x:0,y:0});
+			this.core.Renderer.SetStrokeColor("#F00");
+			this.core.Renderer.RectStroke( pos.x, pos.y, this.width * this.tileSize, this.height * this.tileSize); 
 		} 
 
 		this.Save = function(arg) {
@@ -990,6 +997,22 @@ var core = function(toolMode) {
 						map.mapData = data.data;
 						func(map);
 					}, true);
+		}
+
+		this.Resize = function(width, height) {
+			var map = this.mapData.slice();
+			var prevWidth = this.width;
+			var prevHeight = this.height;
+
+			this.SetMapSize(width, height);
+
+			for(var i = 0; i < prevWidth; ++i)
+				for(var j = 0; j < prevHeight; ++j) {
+					var idx = parseInt(j) * parseInt(prevWidth) + parseInt(i);
+					var tile = map[idx];
+
+					this.SetTile(i, j, tile);
+				} 
 		}
 	};
 	//

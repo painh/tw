@@ -8,13 +8,16 @@
 	"gameDivAlign" : "center",
 	"showLogOnDebugger" : true,
 	"showLogOnConsole" : true,
+	"clearColor" : "#fff",
+	"defaultColor" : "#000",
 	"showLoadProcess" : true,
 	"showInterpreterProcess" : false,
 	"showFPS" : true,
 	"needInstall" : false,
 	"files" : [["test", "test.png", "테스트용"],
 				["entry", "entry.js", "엔트리포인트"],
-				["tilesetA", "assets/Outside_A1.png", "타일셋"]
+				["tilesetA", "assets/Outside_A1.png", "타일셋"],
+				["tilesetB", "assets/tileset2.png", "타일셋B"]
 
 	]
 }

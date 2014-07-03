@@ -26,6 +26,13 @@ $(document).ready(function() {
 			}); 
 	}); 
 
+	$("#btnResize").click(function() {
+		var mapWidth = $("#inpMapWidth").val();
+		var mapHeight = $("#inpMapHeight").val();
+
+		$2.Map.Resize(mapWidth, mapHeight); 
+	});
+
 	$("#btnLoad").click(function() { 
 		var filename = $("#inpFilename").val();
 		$2.Map.Load(filename, function(map)
