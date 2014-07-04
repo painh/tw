@@ -849,7 +849,7 @@ var core = function(toolMode) {
 		this.tileSize = 32;
 		this.width = 100;
 		this.height = 100;
-		this.mapData = [ 1, 1];
+		this.mapData = [[], []];
 		this.screenTileCntX = 0;
 		this.screenTileCntY = 0;
 		this.core = core;
@@ -873,7 +873,7 @@ var core = function(toolMode) {
 				pos.x = parseInt(pos.x / this.tileSize);
 				pos.y = parseInt(pos.y / this.tileSize);
 
-				this.SetTile(pos.x, pos.y, this.selectedTile); 
+				this.SetTile(pos.x, pos.y, this.selectedLayerIDX, this.selectedTile); 
 			}
 		};
 
@@ -886,15 +886,15 @@ var core = function(toolMode) {
 			return parseInt(y) * parseInt(this.width) + parseInt(x);
 		};
 
-		this.SetTile = function(x, y, tile) {
+		this.SetTile = function(x, y, layerIDX, tile) {
 			if((x >= this.width) || (y >= this.height) || (x < 0) || (y < 0))
 				return;
 
 			var pos = this.GetDataPos(x, y);
-			if(pos >= this.mapData.length)
+			if(pos >= this.mapData[layerIDX].length)
 				return;
 
-			this.mapData[pos] = tile;
+			this.mapData[layerIDX][pos] = tile;
 		};
 
 		this.SetTileSize = function(size) {
@@ -907,9 +907,11 @@ var core = function(toolMode) {
 		this.SetMapSize = function(width, height) {
 			this.width = width;
 			this.height = height;
-			this.mapData.length = width * height;
-			for(var i = 0; i < width*height;++i)
-				this.mapData[i] = 0;
+			for(var i = 0; i < this.mapData.length; ++i) { 
+				this.mapData[i].length = width * height;
+				for(var j = 0; j < width*height;++j)
+					this.mapData[i][j] = 0;
+			}
 		}; 
 
 		this.SetTileSet = function(tileSet) {
@@ -918,7 +920,6 @@ var core = function(toolMode) {
 				var img = this.core.Loader.GetByKey(tileSet[i]);
 				this.tileSet[i] = img;
 				if(this.core.toolMode) {
-					console.log(img.src);
 					$("#imgTile_" + i).attr("src", img.src);
 				}
 			}
@@ -936,6 +937,8 @@ var core = function(toolMode) {
 			
 			var loopX = config['width'] / this.tileSize + 2;
 			var loopY = config['height'] / this.tileSize + 2;
+
+			var mapArrayLength = this.width * this.height;
 
 			for( var i = 0; i <  loopX; ++i, renderX += this.tileSize, xIDX++) {
 				if(xIDX < 0)
@@ -959,14 +962,17 @@ var core = function(toolMode) {
 					if(tileIDX < 0)
 						continue;
 
-					if(tileIDX >= this.mapData.length)
-						return;
+					for(var k = 0; k < this.mapData.length; ++k) { 
+						var tile = this.mapData[k][tileIDX]; 
 
-					var tile = this.mapData[tileIDX]; 
-					if(tile) {
-						var img = this.tileSet[0];
-						if(img)
-							this.core.Renderer.Img( renderX, renderY, img, this.tileSize, this.tileSize, tile);
+						if(tileIDX >= this.mapData[k].length)
+							continue;
+
+						if(tile) {
+							var img = this.tileSet[k];
+							if(img)
+								this.core.Renderer.Img( renderX, renderY, img, this.tileSize, this.tileSize, tile);
+						}
 					}
 				}
 			}
@@ -984,6 +990,7 @@ var core = function(toolMode) {
 		} 
 
 		this.Save = function(arg) {
+			this.filename = arg.filename;
 			arg.data = this.mapData;
 			FileWrite(arg.filename, JSON.stringify(arg), function() {
 						  alert('save succeed');
@@ -998,7 +1005,7 @@ var core = function(toolMode) {
 						var data = core.ToJSON(json);
 						map.SetMapSize(parseInt(data.mapWidth), parseInt(data.mapHeight));
 						map.SetTileSize(parseInt(data.tileSize));
-						map.SetTileSet([data.tileSetA]);
+						map.SetTileSet(data.tileSet);
 						map.mapData = data.data;
 						func(map);
 					}, true);

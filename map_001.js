@@ -1,1 +1,1 @@
-{"filename":"map_001.js","mapWidth":"5","mapHeight":"5","tileSize":"32","tileSetA":"tilesetA","data":[1,1,1,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0]}
+{"filename":"map_001.js","mapWidth":"5","mapHeight":"5","tileSize":"32","tileSet":["tilesetA","tilesetB"],"data":[[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,4,0,0,0,0,8,0,0,0,0,12,0,0,0,0,8,0,0,0,0]]}
