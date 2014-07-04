@@ -2,8 +2,17 @@ var config = {};
 var $2 = {};
 
 $(document).ready(function() {
-	FileRead('config.js', function(raw)
-	{
+	function Load(filename) {
+		$2.Map.Load(filename, function(map) {
+						$("#inpFilename").val(filename);
+						$("#inpMapWidth").val(map.width);
+						$("#inpMapHeight").val(map.height);
+						$("#inpTileSize").val(map.tileSize);
+						$("#inpTileAResKey").val(map.tileSet[0].key);
+					});	
+	}
+	
+	FileRead('config.js', function(raw) {
 		config = JSON.parse(raw); 
 		$2 = new core(true);
 
@@ -20,6 +29,7 @@ $(document).ready(function() {
 					console.log('all load complete!');
 
 				clearInterval(timer); 
+				Load("map_001.js");
 				$2.OnLoadComplete(false);
 
 				$2.StartLoop();
@@ -35,14 +45,7 @@ $(document).ready(function() {
 
 	$("#btnLoad").click(function() { 
 		var filename = $("#inpFilename").val();
-		$2.Map.Load(filename, function(map)
-					{
-						$("#inpMapWidth").val(map.width);
-						$("#inpMapHeight").val(map.height);
-						$("#inpTileSize").val(map.tileSize);
-						$("#inpTileAResKey").val(map.tileSet[0].key);
-					});	
-
+		Load(filename);
 	});
 
 	$("#btnSave").click(function() {
@@ -53,11 +56,7 @@ $(document).ready(function() {
 		var tileSetA = $("#inpTileAResKey").val();
 
 
-		$2.Map.Save({filename:filename,
-					mapWidth:mapWidth,
-				   mapHeight:mapHeight,
-				   tileSize:tileSize,
-				   tileSetA:tileSetA});	
+		$2.Map.Save({filename:filename});	
 	});
 
 	$(".imgTileArea").click(function(e) {
@@ -66,4 +65,12 @@ $(document).ready(function() {
 		var idx = x + parseInt($(this).width() / $2.Map.tileSize) * y;
 		$2.Map.SetSelectedTile(idx);
 	});
+
+	$(".btnTileSet").click(function()
+   {
+	   var idx = $(this).attr('data-idx');
+	   $(".divTileArea").attr("display", "none");
+	   $(".divTileArea[data-idx="+idx+"]").attr("display", '');
+	   console.log($('.divTileArea[data-idx="'+idx+'"]'));
+   });
 });

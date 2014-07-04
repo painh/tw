@@ -854,6 +854,7 @@ var core = function(toolMode) {
 		this.screenTileCntY = 0;
 		this.core = core;
 		this.selectedTile = 0;
+		this.selectedLayerIDX = 0;
 
 		this.Update = function() {
 			if(!this.core.toolMode) 
@@ -864,6 +865,9 @@ var core = function(toolMode) {
 			pos.y = parseInt(pos.y / this.tileSize) * this.tileSize;
 			this.cursor = this.core.Camera.WorldToScreen(pos);
 
+			$("#spanCursorX").text(pos.x / this.tileSize);
+			$("#spanCursorY").text(pos.y / this.tileSize);
+
 			if(this.core.MouseManager.Down && !this.core.KeyManager.IsKeyDown(this.core.KeyManager.space)) {
 				var pos = this.core.Camera.ScreenToWorld(this.core.MouseManager);
 				pos.x = parseInt(pos.x / this.tileSize);
@@ -873,7 +877,8 @@ var core = function(toolMode) {
 			}
 		};
 
-		this.SetSelectedTile = function(tile) {
+		this.SetSelectedTile = function(layerIDX, tile) {
+			this.selectedLayerIDX = layerIDX;
 			this.selectedTile = tile;
 		}; 
 
@@ -907,8 +912,7 @@ var core = function(toolMode) {
 				this.mapData[i] = 0;
 		}; 
 
-		this.SetTileSet = function(tileSet)
-		{
+		this.SetTileSet = function(tileSet) {
 			for(var i in tileSet)
 			{
 				var img = this.core.Loader.GetByKey(tileSet[i]);
@@ -972,6 +976,7 @@ var core = function(toolMode) {
 
 			this.core.Renderer.SetStrokeColor("#F00");
 			this.core.Renderer.RectStroke(this.cursor.x, this.cursor.y, this.tileSize, this.tileSize); 
+
 
 			var pos = this.core.Camera.WorldToScreen({x:0,y:0});
 			this.core.Renderer.SetStrokeColor("#F00");
